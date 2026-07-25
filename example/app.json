@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "TheFaithApp Giving Example",
+    "slug": "thefaithapp-giving-react-native-example",
+    "scheme": "thefaithapp-giving-example",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.thefaithapp.reactgivingsample"
+    },
+    "android": {
+      "package": "com.thefaithapp.reactgivingsample",
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": [
+      "@thefaithapp/auth-react-native",
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.com.thefaithapp.reactgivingsample",
+          "enableGooglePay": false
+        }
+      ],
+      "expo-secure-store",
+      "expo-web-browser"
+    ]
+  }
+}

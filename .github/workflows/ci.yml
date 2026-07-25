@@ -1,0 +1,57 @@
+name: React Native Giving CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [20, 22]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Inspect package archive
+        run: npm pack --dry-run
+
+      - name: Install example dependencies
+        working-directory: example
+        run: npm ci
+
+      - name: Type-check example
+        working-directory: example
+        run: npm run typecheck
+
+      - name: Resolve Expo configuration
+        working-directory: example
+        run: npx expo config --type prebuild --json > /dev/null
+
+      - name: Verify Expo dependency compatibility
+        working-directory: example
+        run: npx expo install --check
