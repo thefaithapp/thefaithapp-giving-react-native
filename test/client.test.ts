@@ -86,6 +86,7 @@ function checkoutSession(
     paypalOrderId: null,
     paypalFlow: null,
     paypalTokenId: null,
+    paypalSubscriptionId: null,
     flutterwaveChargeId: null,
     transactionReference: null,
     amount: 10,

@@ -133,6 +133,7 @@ export interface GivingCheckoutSession {
   readonly paypalOrderId: string | null
   readonly paypalFlow: string | null
   readonly paypalTokenId: string | null
+  readonly paypalSubscriptionId: string | null
   readonly flutterwaveChargeId: string | null
   readonly transactionReference: string | null
   readonly amount: number | null
@@ -300,6 +301,7 @@ export function parseCheckoutSession(value: unknown): GivingCheckoutSession {
     paypalOrderId: nullableString(data.paypal_order_id),
     paypalFlow: nullableString(data.paypal_flow),
     paypalTokenId: nullableString(data.paypal_token_id),
+    paypalSubscriptionId: nullableString(data.paypal_subscription_id),
     flutterwaveChargeId: nullableString(data.fw_charge_id),
     transactionReference: nullableString(data.tx_ref),
     amount: nullableNumber(data.amount),

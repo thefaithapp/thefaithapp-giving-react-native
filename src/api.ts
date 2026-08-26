@@ -119,6 +119,9 @@ export class AuthenticatedGivingApi implements GivingApi {
       ...(session.paypalTokenId
         ? { paypal_token_id: session.paypalTokenId }
         : {}),
+      ...(session.paypalSubscriptionId
+        ? { paypal_subscription_id: session.paypalSubscriptionId }
+        : {}),
     })
   }
 
