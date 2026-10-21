@@ -114,15 +114,15 @@ describe('AuthenticatedGivingApi', () => {
   )
 
   it.each([
-    null,
-    [],
-    'raw',
-    { type: 'product' },
-    { type: 'unknown', product: 'x' },
-    { type: 'entitlement', entitlement: 'some_feature' },
+    { plan_access: null },
+    { plan_access: [] },
+    { plan_access: 'raw' },
+    { plan_access: { type: 'product' } },
+    { plan_access: { type: 'unknown', product: 'x' } },
+    { plan_access: { type: 'entitlement', entitlement: 'some_feature' } },
   ])(
     'ignores malformed plan context without losing the plan denial: %j',
-    async (plan_access) => {
+    async ({ plan_access }) => {
       const error = await rejectingApi({ ...planDenial, plan_access })
         .getConfig()
         .catch((value: unknown) => value)
@@ -157,7 +157,7 @@ describe('AuthenticatedGivingApi', () => {
   it('preserves the real API key 401 shape and does not treat it as plan denial', async () => {
     await expect(
       rejectingApi(
-        { success: false, error_message: 'Invalid API key.' },
+        { error_message: 'Unauthorized - Invalid API key' },
         401,
       ).getConfig(),
     ).rejects.toMatchObject({
