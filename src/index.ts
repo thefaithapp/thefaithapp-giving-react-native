@@ -8,7 +8,12 @@ export type {
   GivingApi,
   TheFaithAppAuthorizedClient,
 } from './contracts'
-export { GivingError, type GivingErrorCode } from './errors'
+export {
+  GivingError,
+  type GivingErrorCode,
+  type GivingErrorOptions,
+  type GivingPlanAccess,
+} from './errors'
 export {
   activeGivingProvider,
   campaignGivingTarget,

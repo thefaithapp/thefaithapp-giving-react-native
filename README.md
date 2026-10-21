@@ -82,6 +82,33 @@ A member must have a valid auth session before protected giving calls succeed:
 await auth.signIn()
 ```
 
+## Handle access failures
+
+The expanded error categories and fields below are an **unreleased repository
+update**. They are not yet a new npm release; the package version remains
+unchanged in this change.
+
+A valid sign-in does not guarantee that the church's plan includes SDK access.
+Handle `GivingError.code` according to the failure:
+
+| Code | Meaning | Next step |
+| --- | --- | --- |
+| `not_authenticated` | No usable member session, or HTTP 401 | Follow your app's sign-in recovery path. |
+| `plan_access_denied` | HTTP 403 with a recognized plan denial | Ask the church administrator to review plan access. Signing in again does not change the plan. |
+| `forbidden` | Another HTTP 403 permission denial | Check the permitted resource/action with the church; do not assume the member needs to sign in again. |
+
+`statusCode` retains the HTTP status. `serverErrorCode` retains a valid bounded
+machine code, including `plan_product_unavailable` or
+`plan_entitlement_required`. For those plan denials, optional `planAccess`
+contains only typed identifiers: `type`, `product` or `entitlement`,
+`currentPlan`, and `recommendedPlan`. Missing or malformed context is omitted;
+it does not prevent recognizing a plan denial. No raw response or credentials
+are retained in these fields.
+
+When updating to this change, add the new cases to exhaustive
+`GivingErrorCode` handlers. The built-in view reports the error through
+`onError` and displays its message; it does not sign the member out.
+
 ## General giving
 
 ```tsx
