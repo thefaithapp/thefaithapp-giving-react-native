@@ -2,7 +2,7 @@ import type {
   GivingApi,
   TheFaithAppAuthorizedClient,
 } from './contracts'
-import { GivingError } from './errors'
+import { GivingError, type GivingPlanAccess } from './errors'
 import {
   campaignRequestPayload,
   generalRequestPayload,
@@ -205,18 +205,30 @@ export class AuthenticatedGivingApi implements GivingApi {
     }
     const envelope = payload as Record<string, unknown>
     if (!response.ok) {
+      const serverErrorCode = identifier(envelope.error_code)
       const message =
         typeof envelope.message === 'string' && envelope.message
           ? envelope.message
           : 'The giving request could not be completed.'
       throw new GivingError(
-        response.status === 401 || response.status === 403
+        response.status === 401
           ? 'not_authenticated'
-          : response.status === 422
-            ? 'invalid_request'
-            : 'server',
+          : response.status === 403
+            ? isPlanDenial(serverErrorCode)
+              ? 'plan_access_denied'
+              : 'forbidden'
+            : response.status === 422
+              ? 'invalid_request'
+              : 'server',
         message,
         response.status,
+        {
+          serverErrorCode,
+          planAccess:
+            response.status === 403 && isPlanDenial(serverErrorCode)
+              ? parsePlanAccess(envelope.plan_access, serverErrorCode)
+              : undefined,
+        },
       )
     }
     if (!('data' in envelope)) {
@@ -228,6 +240,43 @@ export class AuthenticatedGivingApi implements GivingApi {
     }
     return envelope.data
   }
+}
+
+function isPlanDenial(code: string | undefined): boolean {
+  return (
+    code === 'plan_product_unavailable' || code === 'plan_entitlement_required'
+  )
+}
+
+function identifier(value: unknown): string | undefined {
+  return typeof value === 'string' &&
+    /^[a-z][a-z0-9_]{0,79}$/.exec(value)?.[0] === value
+    ? value
+    : undefined
+}
+
+function parsePlanAccess(
+  value: unknown,
+  serverErrorCode: string | undefined,
+): GivingPlanAccess | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value))
+    return undefined
+  const plan = value as Record<string, unknown>
+  const type = plan.type
+  if (type !== 'product' && type !== 'entitlement') return undefined
+  if (
+    type !==
+    (serverErrorCode === 'plan_product_unavailable' ? 'product' : 'entitlement')
+  )
+    return undefined
+  const key = identifier(plan[type])
+  if (!key) return undefined
+  return Object.freeze({
+    type,
+    ...(type === 'product' ? { product: key } : { entitlement: key }),
+    currentPlan: identifier(plan.current_plan),
+    recommendedPlan: identifier(plan.recommended_plan),
+  })
 }
 
 function list(value: unknown): readonly unknown[] {
