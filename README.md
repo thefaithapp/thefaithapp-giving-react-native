@@ -12,7 +12,7 @@ payment status.
 ## Install
 
 ```bash
-npm install @thefaithapp/auth-react-native @thefaithapp/giving-react-native
+npm install @thefaithapp/auth-react-native@^0.1.0 @thefaithapp/giving-react-native@^0.2.0
 npx expo install @stripe/stripe-react-native react-native-webview
 npx expo install expo-application expo-crypto expo-secure-store expo-web-browser
 ```
@@ -84,9 +84,8 @@ await auth.signIn()
 
 ## Handle access failures
 
-The expanded error categories and fields below are an **unreleased repository
-update**. They are not yet a new npm release; the package version remains
-unchanged in this change.
+The error categories and fields below apply to **0.2.0**. For the migration
+from 0.1.0, see [Upgrading from 0.1.0](#upgrading-from-010).
 
 A valid sign-in does not guarantee that the church's plan includes SDK access.
 Handle `GivingError.code` according to the failure:
@@ -108,6 +107,37 @@ are retained in these fields.
 When updating to this change, add the new cases to exhaustive
 `GivingErrorCode` handlers. The built-in view reports the error through
 `onError` and displays its message; it does not sign the member out.
+
+## Upgrading from 0.1.0
+
+Upgrade the giving dependency to `^0.2.0`; the auth dependency stays on
+`^0.1.0`. A decoded API error with HTTP 403 was previously reported as `not_authenticated`. In 0.2.0,
+recognized plan denials are `plan_access_denied` and other decoded HTTP 403 errors
+are `forbidden`. Add both to exhaustive `GivingErrorCode` switches and handler
+records, and keep sign-in recovery for missing sessions and HTTP 401.
+
+```ts
+function handleGivingError(error: GivingError) {
+  switch (error.code) {
+    case 'not_authenticated':
+      // Offer the app's sign-in recovery path.
+      break
+    case 'plan_access_denied':
+      // Ask the church administrator to review plan access.
+      break
+    case 'forbidden':
+      // Check permission for this resource or action.
+      break
+    default:
+      // Keep handling the other giving errors.
+      break
+  }
+}
+```
+
+The new `serverErrorCode` and `planAccess` fields are optional. If your app
+constructs `GivingCheckoutSession` objects or fixtures, add the nullable
+`paypalSubscriptionId` field and use `null` when no ID is available.
 
 ## General giving
 

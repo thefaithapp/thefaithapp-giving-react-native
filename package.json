@@ -1,6 +1,6 @@
 {
   "name": "@thefaithapp/giving-react-native",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Authenticated general and campaign giving UI for React Native and Expo apps.",
   "license": "MIT",
   "homepage": "https://thefaithapp.com",
