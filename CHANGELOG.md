@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+- Show recurring choices only when the server enables them; otherwise submit one-time gifts.
+- Use patched Zod and esbuild tooling; verify a source-pinned node-forge security backport before accepting its remaining registry advisory.
+- Enable Android release shrinking in the example with the required optional Stripe issuing warning rule.
+- Load giving configuration and fund or campaign details concurrently.
+- Refresh development dependencies to address compatible security advisories.
+- Fix PayPal approval detection for general, campaign, and recurring giving so
+  approved payments are captured and confirmed through the platform.
+- Keep checkout controls reachable when the phone's numeric keyboard is open.
+- Align the example app's Expo and React Native patch versions with Expo's
+  compatibility requirements, and enable scene support for iOS 27 builds.
+
 ## 0.2.0
 
 - Distinguish expired sign-in, plan-access denial and other forbidden requests.

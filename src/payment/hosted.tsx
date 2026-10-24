@@ -29,11 +29,11 @@ export function PayPalGivingPayment({
       title="PayPal"
       checkout={checkout}
       successPaths={
-        new Set([
+        new Set(
           campaign
-            ? '/paypal/campaigns/approved'
-            : '/paypal/giving/approved',
-        ])
+            ? ['/paypal/campaigns/success']
+            : ['/paypal/giving/success', '/paypal/giving/billing-approved'],
+        )
       }
       cancelPaths={
         new Set([

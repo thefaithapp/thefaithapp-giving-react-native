@@ -80,6 +80,14 @@ describe('giving models', () => {
     ])
   })
 
+  it.each([undefined, false, true, 'true', 1])(
+    'requires explicit server permission for recurring giving: %s',
+    (permission) => {
+      expect(parseGivingConfig({ recurring_giving_enabled: permission })
+        .recurringGivingEnabled).toBe(permission === true)
+    },
+  )
+
   it('parses and sorts all campaign field metadata', () => {
     const campaign = parseGivingCampaign({
       id: 4,

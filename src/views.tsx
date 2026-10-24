@@ -143,6 +143,8 @@ function GivingView({
     [stringOverrides],
   )
   const [config, setConfig] = useState<GivingConfig | null>(null)
+  const recurringAllowed = allowRecurring && prayerRoomId == null &&
+    config?.recurringGivingEnabled === true
   const [funds, setFunds] = useState<readonly GivingFund[]>([])
   const [campaign, setCampaign] = useState<GivingCampaign | null>(null)
   const [currency, setCurrency] = useState<string | null>(null)
@@ -182,13 +184,13 @@ function GivingView({
     setLoading(true)
     setLoadError(null)
     const load = async () => {
-      const nextConfig = await giving.getConfig()
-      const nextFunds =
-        target.type === 'general' ? await giving.getFunds() : []
-      const nextCampaign =
+      const [nextConfig, nextFunds, nextCampaign] = await Promise.all([
+        giving.getConfig(),
+        target.type === 'general' ? giving.getFunds() : [],
         target.type === 'campaign'
-          ? await giving.getCampaign(target.campaignId)
-          : null
+          ? giving.getCampaign(target.campaignId)
+          : null,
+      ])
       if (nextCampaign && !nextCampaign.acceptsCash) {
         throw new GivingError(
           'unavailable',
@@ -252,7 +254,7 @@ function GivingView({
               })),
               currency,
               frequency:
-                prayerRoomId == null ? frequency : 'one_time',
+                recurringAllowed ? frequency : 'one_time',
               memo,
               coverFees,
               prayerRoomId,
@@ -260,7 +262,7 @@ function GivingView({
           : await giving.createCampaignCheckout(target.campaignId, {
               amount: Number(allocations[0]!.amount),
               currency,
-              frequency,
+              frequency: recurringAllowed ? frequency : 'one_time',
               memo,
               coverFees,
               formFields: normalizedCampaignValues(
@@ -320,7 +322,9 @@ function GivingView({
 
   return (
     <ScrollView
+      automaticallyAdjustKeyboardInsets
       contentContainerStyle={[styles.container, contentContainerStyle]}
+      keyboardDismissMode="on-drag"
       keyboardShouldPersistTaps="handled"
     >
       <Text accessibilityRole="header" style={styles.heading}>
@@ -415,7 +419,7 @@ function GivingView({
         onChange={setCurrency}
       />
 
-      {allowRecurring && prayerRoomId == null ? (
+      {recurringAllowed ? (
         <ChoiceGroup
           label={strings.frequency}
           options={givingFrequencies.map((value) => ({
