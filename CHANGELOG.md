@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.1 - 2026-10-24
 
 - Show recurring choices only when the server enables them; otherwise submit one-time gifts.
 - Use patched Zod and esbuild tooling; verify a source-pinned node-forge security backport before accepting its remaining registry advisory.

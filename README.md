@@ -12,7 +12,7 @@ payment status.
 ## Install
 
 ```bash
-npm install @thefaithapp/auth-react-native@^0.1.0 @thefaithapp/giving-react-native@^0.2.0
+npm install @thefaithapp/auth-react-native@^0.1.1 @thefaithapp/giving-react-native@^0.2.1
 npx expo install @stripe/stripe-react-native react-native-webview
 npx expo install expo-application expo-crypto expo-secure-store expo-web-browser
 npx expo install expo-build-properties
@@ -134,8 +134,8 @@ When updating to this change, add the new cases to exhaustive
 
 ## Upgrading from 0.1.0
 
-Upgrade the giving dependency to `^0.2.0`; the auth dependency stays on
-`^0.1.0`. A decoded API error with HTTP 403 was previously reported as `not_authenticated`. In 0.2.0,
+Upgrade the giving dependency to `^0.2.1` and auth to
+`^0.1.1`. A decoded API error with HTTP 403 was previously reported as `not_authenticated`. In 0.2.0,
 recognized plan denials are `plan_access_denied` and other decoded HTTP 403 errors
 are `forbidden`. Add both to exhaustive `GivingErrorCode` switches and handler
 records, and keep sign-in recovery for missing sessions and HTTP 401.
