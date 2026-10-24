@@ -15,6 +15,7 @@ payment status.
 npm install @thefaithapp/auth-react-native@^0.1.0 @thefaithapp/giving-react-native@^0.2.0
 npx expo install @stripe/stripe-react-native react-native-webview
 npx expo install expo-application expo-crypto expo-secure-store expo-web-browser
+npx expo install expo-build-properties
 ```
 
 Add the auth and Stripe plugins to `app.json`. Stripe requires an options
@@ -34,7 +35,18 @@ object even when Apple Pay and Google Pay are not enabled:
         }
       ],
       "expo-secure-store",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-build-properties",
+        {
+          "ios": { "enableSceneSupport": true },
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "extraProguardRules": "-dontwarn com.stripe.android.pushProvisioning.**"
+          }
+        }
+      ]
     ],
     "ios": {
       "bundleIdentifier": "com.example.church"
@@ -48,6 +60,18 @@ object even when Apple Pay and Google Pay are not enabled:
 
 Rebuild the native application after adding the native dependencies. Stripe
 PaymentSheet cannot run inside Expo Go.
+The example enables scene support for Xcode 27 / iOS 27 builds.
+
+For Android release builds with R8 enabled, Stripe's optional card-issuing
+references require this rule in the host app's ProGuard configuration:
+
+```proguard
+-dontwarn com.stripe.android.pushProvisioning.**
+```
+
+Expo apps can set it through `expo-build-properties`' `android.extraProguardRules`.
+The [example app](example/app.json) enables minification and resource shrinking
+with this rule. Giving uses PaymentSheet and does not require card issuing.
 
 ## Create the clients
 
@@ -163,6 +187,9 @@ The view loads available funds, supports splitting a gift between funds,
 currency, recurring frequency, memo, and fee coverage according to the
 church's configuration.
 
+The built-in forms show recurring choices only when the API configuration
+explicitly enables recurring giving. Otherwise, they submit one-time gifts.
+
 ## Campaign giving
 
 ```tsx
@@ -276,3 +303,23 @@ await giving.abandonCheckout(checkout)
 ## License
 
 TheFaithApp Giving is available under the [MIT License](LICENSE).
+
+## Development dependency security
+
+Use Node 22 LTS (22.18+) or Node 24 LTS (24.11+) for source builds.
+When building from a source checkout, run `npm ci --ignore-scripts`, then
+`npm run security:prepare` before using Expo tooling. Run `npm run security:check`
+for the complete dependency audit. `npm test` also tests the audit policy.
+
+Zod and esbuild use patched versions. Until node-forge publishes its fix for
+CVE-2026-85393, the development script backports the nested DigestAlgorithm
+validation from [upstream PR 1152](https://github.com/digitalbazaar/forge/pull/1152).
+It checks the original source hash, verifies the patched file, and tests valid
+and malformed RSA signatures. The audit accepts only that exact advisory for
+copies that passed these checks; new advisories and modified files still fail.
+Raw `npm audit` continues to report the unchanged upstream node-forge version.
+
+This development helper is excluded from the published SDK archive. It does
+not run an install hook in consumer apps. Consumer app maintainers must apply
+their own dependency updates and tooling fixes; the giving example includes the
+same checks.

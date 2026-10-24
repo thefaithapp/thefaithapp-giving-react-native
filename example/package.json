@@ -7,7 +7,13 @@
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "security:prepare": "node scripts/security-check.cjs --prepare-only",
+    "security:check": "node scripts/security-check.cjs",
+    "prestart": "npm run security:prepare",
+    "preandroid": "npm run security:prepare",
+    "preios": "npm run security:prepare",
+    "test:security": "node --test scripts/security-check.test.cjs"
   },
   "dependencies": {
     "@stripe/stripe-react-native": "0.64.0",
@@ -15,6 +21,7 @@
     "@thefaithapp/giving-react-native": "file:..",
     "expo": "~57.0.31",
     "expo-application": "~57.0.3",
+    "expo-build-properties": "~57.0.22",
     "expo-crypto": "~57.0.4",
     "expo-secure-store": "~57.0.4",
     "expo-status-bar": "~57.0.1",
@@ -26,5 +33,8 @@
   "devDependencies": {
     "@types/react": "~19.2.2",
     "typescript": "~6.0.3"
+  },
+  "overrides": {
+    "zod": "^4.6.7"
   }
 }

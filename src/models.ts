@@ -37,6 +37,7 @@ export interface GivingConfig {
   readonly supportedCurrencies: readonly SupportedCurrency[]
   readonly coverFeesEnabled: boolean
   readonly coverFeesPercentage: number | null
+  readonly recurringGivingEnabled?: boolean
 }
 
 export function activeGivingProvider(config: GivingConfig): string | null {
@@ -218,6 +219,7 @@ export function parseGivingConfig(value: unknown): GivingConfig {
         : [{ code: 'USD', name: 'US Dollar', symbol: '$' }],
     coverFeesEnabled: data.cover_fees_enabled === true,
     coverFeesPercentage: nullableNumber(data.cover_fees_percentage),
+    recurringGivingEnabled: data.recurring_giving_enabled === true,
   }
 }
 

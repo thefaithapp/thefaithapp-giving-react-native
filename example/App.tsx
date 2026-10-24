@@ -24,6 +24,9 @@ import {
 } from '@thefaithapp/giving-react-native'
 
 const apiKey = process.env.EXPO_PUBLIC_THEFAITHAPP_API_KEY?.trim() ?? ''
+const initialCampaignId = Number(
+  process.env.EXPO_PUBLIC_THEFAITHAPP_CAMPAIGN_ID || '1',
+)
 
 export default function App() {
   const auth = useMemo(
@@ -49,8 +52,8 @@ export default function App() {
   const [session, setSession] = useState<TheFaithAuthSession | null>(null)
   const [busy, setBusy] = useState(false)
   const [tab, setTab] = useState<'general' | 'campaign'>('general')
-  const [campaignInput, setCampaignInput] = useState('1')
-  const [campaignId, setCampaignId] = useState(1)
+  const [campaignInput, setCampaignInput] = useState(String(initialCampaignId))
+  const [campaignId, setCampaignId] = useState(initialCampaignId)
   const [status, setStatus] = useState(
     apiKey
       ? 'Restore or sign in to start testing.'
