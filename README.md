@@ -9,6 +9,12 @@ TheFaithApp creates the donation, derives the member and client identity from
 the authenticated session, receives provider webhooks, and owns the final
 payment status.
 
+## Documentation
+
+- [React Native Giving SDK guide](https://docs.thefaithapp.com/api-reference/react-native-giving-sdk)
+- [React Native authentication quickstart](https://docs.thefaithapp.com/api-reference/react-native-sdk)
+- [Standalone example app](https://github.com/thefaithapp/thefaithapp-giving-react-native/tree/main/example)
+
 ## Install
 
 ```bash
