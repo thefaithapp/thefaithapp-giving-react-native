@@ -1,4 +1,5 @@
 import {
+  fapshiGivingPaymentHandler,
   flutterwaveGivingPaymentHandler,
   paypalGivingPaymentHandler,
 } from './hosted'
@@ -9,4 +10,5 @@ export const defaultGivingPaymentHandlers: readonly GivingPaymentHandler[] = [
   stripeGivingPaymentHandler,
   paypalGivingPaymentHandler,
   flutterwaveGivingPaymentHandler,
+  fapshiGivingPaymentHandler,
 ]

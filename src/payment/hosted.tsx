@@ -90,6 +90,34 @@ export function FlutterwaveGivingPayment({
   )
 }
 
+export function FapshiGivingPayment({
+  checkout,
+  onComplete,
+  onError,
+}: GivingPaymentHandlerProps) {
+  return (
+    <HostedGivingPayment
+      title="Fapshi"
+      checkout={checkout}
+      successPaths={
+        new Set([
+          checkout.target.type === 'campaign'
+            ? '/fapshi/campaigns/callback'
+            : '/fapshi/giving/callback',
+        ])
+      }
+      cancelPaths={new Set()}
+      // A redirect is not proof of payment. The platform checks the stored
+      // transaction against the church's Fapshi service before confirming it.
+      onApproved={async () =>
+        (await checkout.waitForAuthoritativeStatus()).state
+      }
+      onComplete={onComplete}
+      onError={onError}
+    />
+  )
+}
+
 interface HostedGivingPaymentProps extends GivingPaymentHandlerProps {
   readonly title: string
   readonly successPaths: ReadonlySet<string>
@@ -281,4 +309,9 @@ export const paypalGivingPaymentHandler = {
 export const flutterwaveGivingPaymentHandler = {
   provider: 'flutterwave',
   Component: FlutterwaveGivingPayment,
+} as const
+
+export const fapshiGivingPaymentHandler = {
+  provider: 'fapshi',
+  Component: FapshiGivingPayment,
 } as const

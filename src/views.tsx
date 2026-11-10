@@ -144,7 +144,8 @@ function GivingView({
   )
   const [config, setConfig] = useState<GivingConfig | null>(null)
   const recurringAllowed = allowRecurring && prayerRoomId == null &&
-    config?.recurringGivingEnabled === true
+    config?.recurringGivingEnabled === true &&
+    activeGivingProvider(config) !== 'fapshi'
   const [funds, setFunds] = useState<readonly GivingFund[]>([])
   const [campaign, setCampaign] = useState<GivingCampaign | null>(null)
   const [currency, setCurrency] = useState<string | null>(null)

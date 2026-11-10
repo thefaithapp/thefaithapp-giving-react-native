@@ -2,7 +2,7 @@
 
 This standalone Expo development-build app signs in through
 `@thefaithapp/auth-react-native` and exercises general giving, campaign giving,
-campaign custom fields, Stripe PaymentSheet, and hosted PayPal/Flutterwave
+campaign custom fields, Stripe PaymentSheet, and hosted PayPal/Flutterwave/Fapshi
 checkout.
 
 Register this callback in **Settings > Developer Access** using **Add React

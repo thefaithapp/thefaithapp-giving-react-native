@@ -6,6 +6,7 @@ import {
 } from '../src/models'
 import {
   FlutterwaveGivingPayment,
+  FapshiGivingPayment,
   PayPalGivingPayment,
   trustedGivingCallback,
 } from '../src/payment/hosted'
@@ -121,4 +122,73 @@ describe('Flutterwave provider callbacks', () => {
     ).rejects.toMatchObject({ code: 'payment_failed' })
     expect(context.verifyFlutterwave).not.toHaveBeenCalled()
   })
+})
+
+describe('Fapshi provider callbacks', () => {
+  it.each([
+    [{ type: 'general' }, '/fapshi/giving/callback'],
+    [{ type: 'campaign', campaignId: 12 }, '/fapshi/campaigns/callback'],
+  ] as const)(
+    'confirms %j using authoritative status',
+    async (target, path) => {
+      const context = checkout('fapshi', target)
+      const element = FapshiGivingPayment({
+        checkout: context,
+        onComplete: vi.fn(),
+        onError: vi.fn(),
+      })
+      const hosted = element.props as HostedProps
+      const callback = trustedGivingCallback(
+        `${context.apiOrigin}${path}?donation_id=44&status=SUCCESSFUL`,
+        context.apiOrigin,
+        44,
+        hosted.successPaths,
+      )
+      expect(callback).not.toBeNull()
+      expect(await hosted.onApproved(callback!)).toBe('succeeded')
+      expect(context.waitForAuthoritativeStatus).toHaveBeenCalledOnce()
+      expect(context.capturePayPal).not.toHaveBeenCalled()
+      expect(context.verifyFlutterwave).not.toHaveBeenCalled()
+      expect(
+        trustedGivingCallback(
+          `${context.apiOrigin}${path}?donation_id=45`,
+          context.apiOrigin,
+          44,
+          hosted.successPaths,
+        ),
+      ).toBeNull()
+      expect(
+        trustedGivingCallback(
+          `https://evil.example${path}?donation_id=44`,
+          context.apiOrigin,
+          44,
+          hosted.successPaths,
+        ),
+      ).toBeNull()
+    },
+  )
+
+  it.each(['pending', 'failed'] as const)(
+    'does not trust a successful redirect when status is %s',
+    async (state) => {
+      const context = checkout('fapshi', { type: 'general' })
+      vi.mocked(context.waitForAuthoritativeStatus).mockResolvedValue({
+        donationId: 44,
+        provider: 'fapshi',
+        state,
+      })
+      const element = FapshiGivingPayment({
+        checkout: context,
+        onComplete: vi.fn(),
+        onError: vi.fn(),
+      })
+      expect(
+        await (element.props as HostedProps).onApproved(
+          new URL(
+            'https://api.thefaithapp.com/fapshi/giving/callback?donation_id=44&status=SUCCESSFUL',
+          ),
+        ),
+      ).toBe(state)
+    },
+  )
 })

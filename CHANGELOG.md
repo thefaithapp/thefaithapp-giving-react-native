@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Add a default Fapshi hosted handler for one-time general and campaign gifts in whole XAF amounts of at least 100 XAF.
+- Confirm Fapshi redirects through authenticated checkout status; callback query parameters never mark a gift paid.
+
 ## 0.2.1 - 2026-10-24
 
 - Show recurring choices only when the server enables them; otherwise submit one-time gifts.

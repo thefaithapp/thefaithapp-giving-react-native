@@ -3,7 +3,8 @@
 `@thefaithapp/giving-react-native` adds authenticated general and campaign
 giving to React Native and Expo apps. It renders the giving form, the church's
 active payment method, campaign custom fields, and the payment experience for
-Stripe, PayPal, and Flutterwave.
+Stripe, PayPal, and Flutterwave. The development source also includes Fapshi
+hosted checkout; it is not included in the published 0.2.1 release.
 
 TheFaithApp creates the donation, derives the member and client identity from
 the authenticated session, receives provider webhooks, and owns the final
@@ -195,6 +196,10 @@ church's configuration.
 
 The built-in forms show recurring choices only when the API configuration
 explicitly enables recurring giving. Otherwise, they submit one-time gifts.
+Fapshi always uses one-time gifts in XAF, with whole-franc amounts totalling
+at least 100 XAF. Merchant API keys and webhook secrets stay on the platform;
+the SDK only receives an ephemeral checkout URL. Returning from Fapshi starts
+an authenticated payment-status check and does not itself confirm a gift.
 
 ## Campaign giving
 
@@ -296,7 +301,7 @@ await giving.abandonCheckout(checkout)
   TheFaithApp's API origin.
 - Stripe client secrets and hosted approval URLs are ephemeral and are never
   stored by the SDK.
-- PayPal and Flutterwave callbacks must match the exact API origin, expected
+- PayPal, Flutterwave, and Fapshi callbacks must match the exact API origin, expected
   callback path, and donation ID.
 - A provider UI returning success is not proof of payment. The SDK polls the
   platform's webhook-backed status.

@@ -127,6 +127,71 @@ describe('TheFaithAppGiving', () => {
     expect(api.checkoutGeneral).not.toHaveBeenCalled()
   })
 
+  it('registers Fapshi as a built-in hosted provider', () => {
+    expect(client(api).getPaymentHandler('fapshi')?.provider).toBe('fapshi')
+  })
+
+  it.each([
+    { amount: 99, currency: 'XAF' },
+    { amount: 100.5, currency: 'XAF' },
+    { amount: 100, currency: 'USD' },
+    { amount: 100, currency: 'XAF', frequency: 'monthly' as const },
+  ])(
+    'rejects unsupported Fapshi requests before general or campaign checkout: %j',
+    async (request) => {
+      api.provider = 'fapshi'
+      const giving = client(api)
+      await expect(
+        giving.createGeneralCheckout({
+          ...request,
+          allocations: [{ amount: request.amount }],
+        }),
+      ).rejects.toMatchObject({ code: 'invalid_request' })
+      await expect(
+        giving.createCampaignCheckout(12, request),
+      ).rejects.toMatchObject({ code: 'invalid_request' })
+      expect(api.checkoutGeneral).not.toHaveBeenCalled()
+      expect(api.checkoutCampaign).not.toHaveBeenCalled()
+    },
+  )
+
+  it('uses Fapshi for valid one-time XAF gifts and keeps pending status', async () => {
+    api.provider = 'fapshi'
+    api.session = checkoutSession({
+      provider: 'fapshi',
+      approvalUrl: 'https://checkout.fapshi.com/test',
+      currency: 'XAF',
+    })
+    api.statuses = [{ donationId: 44, provider: 'fapshi', state: 'pending' }]
+    const giving = client(api)
+    const checkout = await giving.createGeneralCheckout({
+      currency: 'XAF',
+      allocations: [{ amount: 1000 }],
+    })
+    expect(checkout.session.provider).toBe('fapshi')
+    expect((await checkout.waitForAuthoritativeStatus()).state).toBe('pending')
+    expect(api.abandonCheckout).not.toHaveBeenCalled()
+  })
+
+  it('does not cancel a Fapshi payment already confirmed by the platform', async () => {
+    api.provider = 'fapshi'
+    api.session = checkoutSession({ provider: 'fapshi', currency: 'XAF' })
+    api.statuses = [{ donationId: 44, provider: 'fapshi', state: 'succeeded' }]
+    const giving = client(api)
+    const checkout = await giving.createGeneralCheckout({
+      currency: 'XAF',
+      allocations: [{ amount: 1000 }],
+    })
+    expect(
+      await giving.finalizeCheckout(checkout, {
+        donationId: 44,
+        provider: 'fapshi',
+        state: 'cancelled',
+      }),
+    ).toEqual({ donationId: 44, provider: 'fapshi', state: 'succeeded' })
+    expect(api.abandonCheckout).not.toHaveBeenCalled()
+  })
+
   it('rejects duplicate fund allocations before checkout', async () => {
     await expect(
       client(api).createGeneralCheckout({

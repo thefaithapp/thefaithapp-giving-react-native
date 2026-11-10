@@ -52,8 +52,10 @@ export {
 } from './payment/defaults'
 export {
   FlutterwaveGivingPayment,
+  FapshiGivingPayment,
   PayPalGivingPayment,
   flutterwaveGivingPaymentHandler,
+  fapshiGivingPaymentHandler,
   paypalGivingPaymentHandler,
   trustedGivingCallback,
 } from './payment/hosted'

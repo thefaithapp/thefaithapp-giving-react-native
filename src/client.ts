@@ -104,6 +104,12 @@ export class TheFaithAppGiving {
     validateGeneralRequest(request)
     const target = generalGivingTarget()
     const provider = await this.activeProvider()
+    validateProviderRequest(
+      provider,
+      request.currency,
+      request.frequency,
+      request.allocations.map(({ amount }) => amount),
+    )
     const session = await this.api.checkoutGeneral(request, provider)
     return this.checkoutContext(target, provider, session)
   }
@@ -125,6 +131,9 @@ export class TheFaithAppGiving {
     }
     const target = campaignGivingTarget(campaignId)
     const provider = await this.activeProvider()
+    validateProviderRequest(provider, request.currency, request.frequency, [
+      request.amount,
+    ])
     const session = await this.api.checkoutCampaign(
       campaignId,
       request,
@@ -146,6 +155,16 @@ export class TheFaithAppGiving {
         'malformed_response',
         'The payment handler returned a result for a different checkout.',
       )
+    }
+    if (result.provider === 'fapshi' && result.state === 'cancelled') {
+      try {
+        const status = await checkout.getAuthoritativeStatus()
+        if (status.state !== 'pending') {
+          return { ...result, state: status.state }
+        }
+      } catch {
+        // A local dismissal is advisory when status cannot be refreshed.
+      }
     }
     if (
       result.state === 'cancelled' ||
@@ -253,6 +272,26 @@ export class TheFaithAppGiving {
       verifyFlutterwave: (transactionId: string) =>
         this.api.verifyFlutterwave(target, session, transactionId),
     })
+  }
+}
+
+function validateProviderRequest(
+  provider: string,
+  currency: string,
+  frequency: string | undefined,
+  amounts: readonly number[],
+): void {
+  if (provider !== 'fapshi') return
+  if (
+    currency.toUpperCase() !== 'XAF' ||
+    (frequency != null && frequency !== 'one_time') ||
+    amounts.some((amount) => !Number.isSafeInteger(amount)) ||
+    amounts.reduce((total, amount) => total + amount, 0) < 100
+  ) {
+    throw new GivingError(
+      'invalid_request',
+      'Fapshi supports one-time gifts of at least 100 XAF in whole francs.',
+    )
   }
 }
 
