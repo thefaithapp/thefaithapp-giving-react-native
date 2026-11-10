@@ -322,13 +322,12 @@ When building from a source checkout, run `npm ci --ignore-scripts`, then
 `npm run security:prepare` before using Expo tooling. Run `npm run security:check`
 for the complete dependency audit. `npm test` also tests the audit policy.
 
-Zod and esbuild use patched versions. Until node-forge publishes its fix for
-CVE-2026-85393, the development script backports the nested DigestAlgorithm
-validation from [upstream PR 1152](https://github.com/digitalbazaar/forge/pull/1152).
-It checks the original source hash, verifies the patched file, and tests valid
-and malformed RSA signatures. The audit accepts only that exact advisory for
-copies that passed these checks; new advisories and modified files still fail.
-Raw `npm audit` continues to report the unchanged upstream node-forge version.
+Dependency overrides pin patched glob, minimatch, and node-forge versions.
+Expo's updated configuration packages remove deepmerge and Zod from the
+development dependency tree. The security helper verifies the pinned upstream
+node-forge source and checks valid and malformed RSA signatures before running
+`npm audit`. Any reported advisory fails the check; there are no advisory
+exceptions.
 
 This development helper is excluded from the published SDK archive. It does
 not run an install hook in consumer apps. Consumer app maintainers must apply

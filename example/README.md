@@ -40,9 +40,10 @@ overrides before starting Metro.
 Use Node 22 LTS (22.18+) or Node 24 LTS (24.11+) for source builds.
 Run `npm ci --ignore-scripts` followed by `npm run security:prepare` before
 running Expo directly. The npm start/android/ios commands run preparation
-as a pre-hook. `npm run security:check` audits dependencies and verifies the
-node-forge CVE-2026-85393 backport; `npm run test:security` tests the audit policy.
-The registry advisory remains visible until an upstream patched version ships.
+as a pre-hook. `npm run security:check` audits dependencies and verifies required
+dependency hardening; `npm run test:security` tests the audit policy. After
+updating Expo packages, run `npx expo install --check` to confirm their native
+versions remain aligned with this example’s Expo SDK.
 
 Android release builds enable R8 and resource shrinking. The Expo build properties
 include the optional Stripe push-provisioning warning rule required by the native

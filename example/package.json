@@ -19,9 +19,9 @@
     "@stripe/stripe-react-native": "0.64.0",
     "@thefaithapp/auth-react-native": "^0.1.1",
     "@thefaithapp/giving-react-native": "file:..",
-    "expo": "~57.0.31",
+    "expo": "~57.0.32",
     "expo-application": "~57.0.3",
-    "expo-build-properties": "~57.0.22",
+    "expo-build-properties": "~57.0.23",
     "expo-crypto": "~57.0.4",
     "expo-secure-store": "~57.0.4",
     "expo-status-bar": "~57.0.1",
@@ -35,6 +35,9 @@
     "typescript": "~6.0.3"
   },
   "overrides": {
-    "zod": "^4.6.7"
+    "zod": "^4.6.7",
+    "node-forge": "1.4.3",
+    "glob": "14.0.3",
+    "minimatch": "11.0.1"
   }
 }

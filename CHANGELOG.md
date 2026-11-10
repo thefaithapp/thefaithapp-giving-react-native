@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Update Expo development tooling and vulnerable transitive dependencies; replace the node-forge backport with its upstream fix and require a clean dependency audit.
+- Align the standalone example with Expo 57 patch requirements.
+
 - Add a default Fapshi hosted handler for one-time general and campaign gifts in whole XAF amounts of at least 100 XAF.
 - Confirm Fapshi redirects through authenticated checkout status; callback query parameters never mark a gift paid.
 

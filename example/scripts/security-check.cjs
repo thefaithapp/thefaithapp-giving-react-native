@@ -1,34 +1,57 @@
 // Development tooling only; excluded from published SDK archives.
-// Backport: digitalbazaar/forge#1152, ceba34402e329f0365134f23fe19898756527d65.
-// The upstream BSD-licensed fix rejects extra nested DigestAlgorithm children.
+// Source pin derived from the official node-forge 1.4.3 npm tarball:
+// sha512-P6wzfh6t70avmV8FrVEAd/36sOPJQ+hkaJVX1Laap9J/77m7M0eyozDvc8SwnDf4P7MP94gwbAAo0rg3YVXT+g==
 const assert = require('node:assert/strict')
 const crypto = require('node:crypto')
 const fs = require('node:fs')
 const path = require('node:path')
 const { spawnSync } = require('node:child_process')
 
-const originalHash = 'fd4740238145ec26470eb3f06a627c72039538ce1307dbdce40521f94dfd0a50'
-const before = 'obj.value.length !== 2) {'
-const after = "obj.value.length !== 2 ||\n            obj.value[0].value.length !==\n              (('parameters' in capture) ? 2 : 1)) {"
-const advisory = 'https://github.com/advisories/GHSA-86w9-cpqp-85rv'
+const forgeVersion = '1.4.3'
+const forgeSourceHash = 'a91e166de7853108680fc07af5c5c4c4ad06693991a3cf84017816a0953119e0'
 const root = path.resolve(__dirname, '..')
-const vetted = new Set()
-const sha256 = (value) => crypto.createHash('sha256').update(value).digest('hex')
 
-function forgeDirectories(modules) {
+function packageDirectories(modules, packageName, visited = new Set()) {
   if (!fs.existsSync(modules)) return []
+  const real = fs.realpathSync(modules)
+  if (visited.has(real)) return []
+  visited.add(real)
   const found = []
   for (const entry of fs.readdirSync(modules, { withFileTypes: true })) {
-    if (!entry.isDirectory() || entry.name.startsWith('.')) continue
+    if (entry.name.startsWith('.')) continue
     const directory = path.join(modules, entry.name)
+    if (!entry.isDirectory() && !(entry.isSymbolicLink() && fs.statSync(directory).isDirectory())) continue
     if (entry.name.startsWith('@')) {
-      found.push(...forgeDirectories(directory))
+      found.push(...packageDirectories(directory, packageName, visited))
     } else {
-      if (entry.name === 'node-forge') found.push(directory)
-      found.push(...forgeDirectories(path.join(directory, 'node_modules')))
+      if (entry.name === packageName) found.push(directory)
+      found.push(...packageDirectories(path.join(directory, 'node_modules'), packageName, visited))
     }
   }
   return found
+}
+
+function sourceFiles(directory, relative = 'lib') {
+  return fs.readdirSync(path.join(directory, relative), { withFileTypes: true })
+    .flatMap((entry) => {
+      const name = `${relative}/${entry.name}`
+      assert.ok(!entry.isSymbolicLink(), `Unexpected dependency source symlink: ${name}`)
+      if (entry.isDirectory()) return sourceFiles(directory, name)
+      assert.ok(entry.isFile(), `Unexpected dependency source entry: ${name}`)
+      return [name]
+    })
+}
+
+function verifyForgeSource(directory) {
+  const manifest = JSON.parse(fs.readFileSync(path.join(directory, 'package.json'), 'utf8'))
+  assert.equal(manifest.version, forgeVersion, 'Unsupported node-forge version; use the reviewed upstream release')
+  const hash = crypto.createHash('sha256')
+  for (const file of ['package.json', ...sourceFiles(directory)].sort()) {
+    hash.update(`${file}\0`)
+    hash.update(fs.readFileSync(path.join(directory, file)))
+    hash.update('\0')
+  }
+  assert.equal(hash.digest('hex'), forgeSourceHash, 'Unexpected node-forge source; refusing unverified dependency')
 }
 
 function verifySignatures(directory) {
@@ -68,48 +91,37 @@ function verifySignatures(directory) {
   }
 }
 
-for (const directory of forgeDirectories(path.join(root, 'node_modules'))) {
-  const manifest = JSON.parse(fs.readFileSync(path.join(directory, 'package.json'), 'utf8'))
-  if (manifest.version === '1.4.0') {
-    const file = path.join(directory, 'lib/rsa.js')
-    const source = fs.readFileSync(file, 'utf8')
-    // Derive the pristine source before validating: repeated runs must be safe,
-    // and an edited or incomplete patch must never qualify for the exception.
-    const pristine = source.includes(after) ? source.replace(after, before) : source
-    assert.equal(sha256(pristine), originalHash, 'Unexpected node-forge source; refusing patch')
-    assert.equal(pristine.split(before).length, 2, 'Ambiguous node-forge patch target')
-    const patched = pristine.replace(before, after)
-    if (source !== patched) fs.writeFileSync(file, patched)
-    assert.equal(sha256(fs.readFileSync(file)), sha256(patched))
-    vetted.add(path.relative(root, directory).split(path.sep).join('/'))
-  }
+const forge = packageDirectories(path.join(root, 'node_modules'), 'node-forge')
+assert.ok(forge.length > 0, 'Expected node-forge installation was not found; review security policy')
+for (const directory of forge) {
+  verifyForgeSource(directory)
   verifySignatures(directory)
 }
-assert.ok(vetted.size > 0, 'Expected node-forge installation was not found; review security policy')
-console.log(`Verified node-forge backport and signature regressions in ${vetted.size} installation(s).`)
+console.log(`Verified upstream node-forge ${forgeVersion} source and signature regressions in ${forge.length} installation(s).`)
 if (process.argv.includes('--prepare-only')) process.exit(0)
 
 const audit = spawnSync(process.platform === 'win32' ? 'npm.cmd' : 'npm',
-  ['audit', '--package-lock-only', '--json'], { cwd: root, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 })
+  ['audit', '--package-lock-only', '--include=dev', '--include=optional', '--include=peer', '--json'], {
+    cwd: root, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024, timeout: 60000,
+  })
 const report = JSON.parse(audit.stdout || '{}')
-assert.ok(!audit.error && !report.error && report.metadata && report.vulnerabilities,
+assert.ok(!audit.error && !audit.signal && !report.error && report.metadata && report.vulnerabilities
+  && typeof report.vulnerabilities === 'object' && !Array.isArray(report.vulnerabilities),
   'Dependency audit did not return complete advisory data')
+const counts = report.metadata.vulnerabilities
+assert.ok(counts && ['info', 'low', 'moderate', 'high', 'critical', 'total']
+  .every((severity) => Number.isSafeInteger(counts[severity]) && counts[severity] >= 0),
+  'Dependency audit did not return complete vulnerability counts')
 const failures = new Set()
-let backported = false
 for (const [name, entry] of Object.entries(report.vulnerabilities)) {
-  for (const issue of entry.via.filter((value) => typeof value === 'object')) {
-    if (name === 'node-forge' && issue.url === advisory &&
-        entry.nodes.length > 0 && entry.nodes.every((node) => vetted.has(node))) {
-      backported = true
-      continue
-    }
-    failures.add(`${name}: ${issue.severity} ${issue.url}`)
-  }
+  assert.ok(entry && Array.isArray(entry.via), 'Dependency audit contains malformed advisory data')
+  const advisories = entry.via.filter((value) => value && typeof value === 'object')
+  failures.add(`${name}: ${entry.severity || 'unknown'} ${advisories.map((issue) => issue.url || 'unidentified advisory').join(', ') || 'vulnerable transitive dependency'}`)
 }
 if (failures.size) {
   console.error([...failures].join('\n'))
   process.exit(1)
 }
-console.log(backported
-  ? 'Audit passed: the sole remaining registry advisory has a verified local backport.'
-  : 'Audit passed: no dependency advisories.')
+assert.equal(audit.status, 0, 'Dependency audit exited unsuccessfully without complete findings')
+assert.ok(Object.values(counts).every((count) => count === 0), 'Dependency audit counts contradict its advisory results')
+console.log('Audit passed: no dependency advisories.')
